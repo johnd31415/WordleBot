@@ -1,3 +1,4 @@
 auth.json
 node_modules/*
 gameData/*
+package-lock.json
