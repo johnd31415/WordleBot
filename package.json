@@ -1,0 +1,26 @@
+{
+
+    "name": "wordle-bot",
+
+    "version": "1.0.0",
+
+    "description": "",
+
+    "main": "main.js",
+
+    "author": "Nunya Bizniz",
+
+    "dependencies": {
+
+        "csv-parse": "^5.0.4",
+
+        "csv-parser": "^3.0.0",
+
+        "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+
+        "winston": "^3.6.0"
+
+    }
+
+}
+
