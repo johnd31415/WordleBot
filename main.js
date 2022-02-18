@@ -23,25 +23,31 @@ bot.on("messageCreate", (message) => {
     var user = message.author.username; 
     logger.info('Message from ' + user);
     msgWords = message.content.split("\n")[0].split(" ");
-    if (msgWords[0] == 'Wordle' && parseInt(msgWords[1]) != NaN) {
+    if (msgWords[0] == 'Wordle' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
         logger.info('Wordle score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
         var gameNum = parseInt(msgWords[1]);
         addWordleGame(user, rounds, gameNum, 'wordleScores');
     }
-    if (msgWords[0] == 'Daily' && msgWords[1] == 'Quordle') {
+    else if (msgWords[0] == 'Daily' && msgWords[1] == 'Quordle' && !isNaN(parseInt(msgWords[2]))) {
         logger.info('Quordle score');
         var rounds = Math.max(...[message.content.split("\n")[1].substring(0,1),message.content.split("\n")[1].substring(3,4), message.content.split("\n")[2].substring(0,1),message.content.split("\n")[2].substring(3,4)]);
         var gameNum = parseInt(msgWords[2].split('#')[1]);
-        addWordleGame(user, rounds, gameNum, 'quordleScores');
+        logger.info(rounds);
+        if(isNaN(rounds)){
+            return false;
+        }
+        else{
+            addWordleGame(user, rounds, gameNum, 'quordleScores');
+        }
     }
-    if (msgWords[0] == 'nerdlegame' && parseInt(msgWords[1]) != NaN) {
+    else if (msgWords[0] == 'nerdlegame' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
         logger.info('nerdlegame score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
         var gameNum = parseInt(msgWords[1]);
         addWordleGame(user, rounds, gameNum, 'nerdleScores');
     }
-    if (msgWords[0] == '#Worldle') {
+    else if (msgWords[0] == '#Worldle' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
         logger.info('worldle score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
         var gameNum = parseInt(msgWords[1]);
@@ -94,7 +100,9 @@ function getGameAvg(type, outString, user, interaction){
         avg = avg/tot;
         avg = Math.round(avg * 100) / 100
 
-        outString += 'Your average ' + type[0] + ' score is: ' + avg + ', with ' + tot + ' recorded games.\n';
+        if(!isNaN(avg) && tot != 0){
+            outString += 'Your average ' + type[0] + ' score is: ' + avg + ', with ' + tot + ' recorded games.\n';
+        }
         type.shift();
         getGameAvg(type, outString, user, interaction)
     });
