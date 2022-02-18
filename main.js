@@ -1,81 +1,84 @@
-var Discord = require('discord.io');
 var logger = require('winston');
-var auth = require('./auth.json');
 const fs = require('fs');
 const csv = require('csv-parser');
+const { Client, Intents } = require('discord.js');
+const { token } = require('./auth.json');
 
 // Configure logger settings
 logger.remove(logger.transports.Console);
 logger.add(new logger.transports.Console, {colorize: true});
 logger.level = 'debug';
 
-// Initialize Discord Bot
-var bot = new Discord.Client({
-    token: auth.token,
-    autorun: true
-});
-bot.on('ready', function (evt) {
+const bot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+
+bot.once('ready', function (evt) {
 logger.info('Connected');
-logger.info('Logged in as: ');
-logger.info(bot.username + ' - (' + bot.id + ')');
+logger.info('Logged in');
 });
-bot.on('message', function (user, userID, channelID, message, evt) {
-logger.info('Processing message from ' + user);
 
-msgWords = message.split("\n")[0].split(" ");
-if (msgWords[0] == 'Wordle' && parseInt(msgWords[1]) != NaN) {
-    logger.info('Wordle score');
-    var rounds = parseInt(msgWords[2].split('/')[0]);
-    var gameNum = parseInt(msgWords[1]);
-    addWordleGame(user, rounds, gameNum, 'wordleScores');
-}
-if (msgWords[0] == 'Daily' && msgWords[1] == 'Quordle') {
-    logger.info('Quordle score');
-    var rounds = Math.max(...[message.split("\n")[1].substring(0,1),message.split("\n")[1].substring(3,4), message.split("\n")[2].substring(0,1),message.split("\n")[2].substring(3,4)]);
-    var gameNum = parseInt(msgWords[2].split('#')[1]);
-    addWordleGame(user, rounds, gameNum, 'quordleScores');
-}
-if (msgWords[0] == 'nerdlegame' && parseInt(msgWords[1]) != NaN) {
-    logger.info('nerdlegame score');
-    var rounds = parseInt(msgWords[2].split('/')[0]);
-    var gameNum = parseInt(msgWords[1]);
-    addWordleGame(user, rounds, gameNum, 'nerdleScores');
-}
-if (msgWords[0] == '#Worldle') {
-    logger.info('worldle score');
-    var rounds = parseInt(msgWords[2].split('/')[0]);
-    var gameNum = parseInt(msgWords[1]);
-    addWordleGame(user, rounds, gameNum, 'worldleScores');
-}
+bot.login(token);
 
-
-if (message.substring(0, 1) == '!') {
-    var args = message.substring(1).split(' ');
-    var cmd = args[0];
-    args = args.splice(1);
-    switch(cmd) {
-        // !ping
-        case 'stats':
-            getStats(user, channelID);
-            break;
-        case 'leaderboard':
-            getLeaderboard(args[0], channelID);
-            break;
-        case 'help':
-            bot.sendMessage({
-                to: channelID,
-                message: 'Available Commands:\n1) !help - View this menu\n2) !stats - Displays your personal stats for each game.\n3) !leaderboard {wordle|nerdle|worldle|quordle} - Displays the top averages for the chosen game'
-            });
-        break;
-        // Just add any case commands if you want to..
-        }
+bot.on("messageCreate", (message) => {
+    if (message.author.bot) return false; 
+    var user = message.author.username; 
+    logger.info('Message from ' + user);
+    msgWords = message.content.split("\n")[0].split(" ");
+    if (msgWords[0] == 'Wordle' && parseInt(msgWords[1]) != NaN) {
+        logger.info('Wordle score');
+        var rounds = parseInt(msgWords[2].split('/')[0]);
+        var gameNum = parseInt(msgWords[1]);
+        addWordleGame(user, rounds, gameNum, 'wordleScores');
     }
+    if (msgWords[0] == 'Daily' && msgWords[1] == 'Quordle') {
+        logger.info('Quordle score');
+        var rounds = Math.max(...[message.content.split("\n")[1].substring(0,1),message.content.split("\n")[1].substring(3,4), message.content.split("\n")[2].substring(0,1),message.content.split("\n")[2].substring(3,4)]);
+        var gameNum = parseInt(msgWords[2].split('#')[1]);
+        addWordleGame(user, rounds, gameNum, 'quordleScores');
+    }
+    if (msgWords[0] == 'nerdlegame' && parseInt(msgWords[1]) != NaN) {
+        logger.info('nerdlegame score');
+        var rounds = parseInt(msgWords[2].split('/')[0]);
+        var gameNum = parseInt(msgWords[1]);
+        addWordleGame(user, rounds, gameNum, 'nerdleScores');
+    }
+    if (msgWords[0] == '#Worldle') {
+        logger.info('worldle score');
+        var rounds = parseInt(msgWords[2].split('/')[0]);
+        var gameNum = parseInt(msgWords[1]);
+        addWordleGame(user, rounds, gameNum, 'worldleScores');
+    }
+  });
+
+bot.on('interactionCreate', async interaction => {
+logger.info('Processing message from ' + interaction.user.tag.split('#')[0]);
+if (!interaction.isCommand()) return;
+
+const { commandName } = interaction;
+
+if (commandName === 'help') {
+    await interaction.reply('Available Commands:\n1) /help - View this menu\n2) /stats - Displays your personal stats for each game.\n3) /leaderboard {wordle|nerdle|worldle|quordle} - Displays the top averages for the chosen game');
+} else if (commandName === 'stats') {
+    await getStats(interaction.user.tag.split('#')[0], interaction);
+} else if (commandName === 'leaderboard') {
+    await getLeaderboard(interaction.options.getString("gametype"), interaction);
+}
+
 });
-function getStats(user, channelID){
+
+function getStats(user, interaction){
+    var outString = "";
+    getGameAvg(['wordle','worldle','quordle','nerdle'], outString, user, interaction)
+}
+function getGameAvg(type, outString, user, interaction){
+    if(type.length == 0){
+        interaction.reply(outString);
+        return;
+    }
     var games = [];
     var avg = 0;
     var tot = 0;
-    fs.createReadStream('gameData/wordleScores.csv')
+    var file = type[0] + 'Scores.csv';
+    fs.createReadStream('gameData/' + file)
         .pipe(csv())
         .on('data', (row) => {
           games.push(row);
@@ -90,72 +93,13 @@ function getStats(user, channelID){
         });
         avg = avg/tot;
         avg = Math.round(avg * 100) / 100
-        bot.sendMessage({
-            to: channelID,
-            message: 'Your average Wordle score is: ' + avg + ', with ' + tot + ' recorded games.'
-        });
-    });
-    fs.createReadStream('gameData/nerdleScores.csv')
-        .pipe(csv())
-        .on('data', (row) => {
-          games.push(row);
-        })
-        .on('end', () => {
-            logger.info('CSV file successfully processed');
-          games.forEach((game)=>{
-            if(game.Name == user){
-                tot += 1;
-                avg += parseInt(game.Rounds);
-            }
-        });
-        avg = avg/tot;
-        avg = Math.round(avg * 100) / 100
-        bot.sendMessage({
-            to: channelID,
-            message: 'Your average Nerdle score is: ' + avg + ', with ' + tot + ' recorded games.'
-        });
-    });
-    fs.createReadStream('gameData/worldleScores.csv')
-        .pipe(csv())
-        .on('data', (row) => {
-          games.push(row);
-        })
-        .on('end', () => {
-            logger.info('CSV file successfully processed');
-          games.forEach((game)=>{
-            if(game.Name == user){
-                tot += 1;
-                avg += parseInt(game.Rounds);
-            }
-        });
-        avg = avg/tot;
-        avg = Math.round(avg * 100) / 100
-        bot.sendMessage({
-            to: channelID,
-            message: 'Your average Worldle score is: ' + avg + ', with ' + tot + ' recorded games.'
-        });
-    });
-    fs.createReadStream('gameData/quordleScores.csv')
-        .pipe(csv())
-        .on('data', (row) => {
-          games.push(row);
-        })
-        .on('end', () => {
-            logger.info('CSV file successfully processed');
-          games.forEach((game)=>{
-            if(game.Name == user){
-                tot += 1;
-                avg += parseInt(game.Rounds);
-            }
-        });
-        avg = avg/tot;
-        avg = Math.round(avg * 100) / 100
-        bot.sendMessage({
-            to: channelID,
-            message: 'Your average Quordle score is: ' + avg + ', with ' + tot + ' recorded games.'
-        });
+
+        outString += 'Your average ' + type[0] + ' score is: ' + avg + ', with ' + tot + ' recorded games.\n';
+        type.shift();
+        getGameAvg(type, outString, user, interaction)
     });
 }
+
 function addWordleGame(user, rounds, gameNum, type){
     var games = [];
     fs.createReadStream('gameData/'+ type +'.csv')
@@ -180,8 +124,8 @@ function addWordleGame(user, rounds, gameNum, type){
             }
         });
 }
-function getLeaderboard(type, channelID){
-    logger.info('TODO');
+
+async function getLeaderboard(type, interaction){
     var fileName;
     switch(type) {
         case 'wordle':
@@ -197,10 +141,7 @@ function getLeaderboard(type, channelID){
             fileName = 'nerdleScores';
             break;
         default:
-            bot.sendMessage({
-                to: channelID,
-                message: 'Thats not a valid leaderboard you fuckin nonce'
-            });
+            interaction.reply('Thats not a valid leaderboard you fuckin nonce');
             return;
     }
     var games = [];
@@ -235,10 +176,7 @@ function getLeaderboard(type, channelID){
         leaders.forEach((leader)=>{
             outString += leader.Name + ': ' + leader.avg + '\n';
         })
-        bot.sendMessage({
-            to: channelID,
-            message: outString
-        });
+        interaction.reply(outString);
     });
 }
 function compare(a,b){
