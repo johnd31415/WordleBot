@@ -31,7 +31,7 @@ bot.on("messageCreate", (message) => {
         logger.info('Wordle score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
         var gameNum = parseInt(msgWords[1]);
-        addWordleGame(user, rounds, gameNum, 'wordleScores');
+        addWordleGame(user, rounds, gameNum, 'wordleScores', message);
     }
     else if (msgWords[0] == 'Daily' && msgWords[1] == 'Quordle') {
         logger.info('Quordle score');
@@ -41,20 +41,20 @@ bot.on("messageCreate", (message) => {
             return false;
         }
         else{
-            addWordleGame(user, rounds, gameNum, 'quordleScores');
+            addWordleGame(user, rounds, gameNum, 'quordleScores', message);
         }
     }
     else if (msgWords[0] == 'nerdlegame' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
         logger.info('nerdlegame score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
         var gameNum = parseInt(msgWords[1]);
-        addWordleGame(user, rounds, gameNum, 'nerdleScores');
+        addWordleGame(user, rounds, gameNum, 'nerdleScores', message);
     }
     else if (msgWords[0] == '#Worldle' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
         logger.info('worldle score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
         var gameNum = parseInt(msgWords[1]);
-        addWordleGame(user, rounds, gameNum, 'worldleScores');
+        addWordleGame(user, rounds, gameNum, 'worldleScores', message);
     }
 });
 
@@ -128,7 +128,7 @@ function getGameAvg(type, outString, user, interaction){
     });
 }
 
-function addWordleGame(user, rounds, gameNum, type){
+function addWordleGame(user, rounds, gameNum, type, message){
     var games = [];
     fs.createReadStream('gameData/'+ type +'.csv')
         .pipe(csv())
@@ -144,10 +144,18 @@ function addWordleGame(user, rounds, gameNum, type){
             });
             if(flag){
                 fs.appendFile('gameData/'+ type +'.csv', user+','+gameNum+','+rounds+'\n', function (err) {
+                    if(rounds<2){
+                        message.reply("You cheated and you know it")
+                    } else if(rounds<3){
+                        message.reply("Aight that was definitely just luck")
+                    } else if(rounds<4 || (type == 'quordle' && rounds < 8)){
+                        message.reply("Dayuum")
+                    }
                     logger.info('Saved!');
                 });
             }
             else{
+                message.reply("Cool it dude, you already have a score for today")
                 logger.info('Duplicate score; not saved');
             }
         });
