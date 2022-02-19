@@ -9,9 +9,12 @@ logger.level = 'debug';
 
 const commands = [
 	new SlashCommandBuilder().setName('help').setDescription('Replies with a list of available WordleBot commands'),
-	new SlashCommandBuilder().setName('stats').setDescription('Replies with various Wordle stats'),
+	new SlashCommandBuilder().setName('stats').setDescription('Replies with various Wordle stats')
+		.addStringOption(option => option.setName('user').setDescription('Enter a user (defaults to yourself)')),
 	new SlashCommandBuilder().setName('leaderboard').setDescription('Replies with leaderboard for selected game')
-        .addStringOption(option => option.setName('gametype').setDescription('Enter which game: {wordle|nerdle|worldle|quordle}'))
+        .addStringOption(option => option.setName('gametype').setDescription('Enter which game: {wordle|nerdle|worldle|quordle}')),
+	new SlashCommandBuilder().setName('catfact').setDescription('Replies with a random cat fact'),
+	new SlashCommandBuilder().setName('faq').setDescription('Replies with answers to common FAQ\'s')
 ]
 	.map(command => command.toJSON());
 

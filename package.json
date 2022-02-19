@@ -16,6 +16,8 @@
 
         "@discordjs/rest": "^0.3.0",
 
+        "axios": "^0.26.0",
+
         "csv-parse": "^5.0.4",
 
         "csv-parser": "^3.0.0",

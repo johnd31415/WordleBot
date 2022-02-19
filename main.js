@@ -3,6 +3,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const { Client, Intents } = require('discord.js');
 const { token } = require('./auth.json');
+const axios = require('axios')
 
 // Configure logger settings
 logger.remove(logger.transports.Console);
@@ -12,8 +13,8 @@ logger.level = 'debug';
 const bot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 bot.once('ready', function (evt) {
-logger.info('Connected');
-logger.info('Logged in');
+    logger.info('Connected');
+    logger.info('Logged in');
 });
 
 bot.login(token);
@@ -53,25 +54,38 @@ bot.on("messageCreate", (message) => {
         var gameNum = parseInt(msgWords[1]);
         addWordleGame(user, rounds, gameNum, 'worldleScores');
     }
-  });
-
-bot.on('interactionCreate', async interaction => {
-logger.info('Processing message from ' + interaction.user.tag.split('#')[0]);
-if (!interaction.isCommand()) return;
-
-const { commandName } = interaction;
-
-if (commandName === 'help') {
-    await interaction.reply('Available Commands:\n1) /help - View this menu\n2) /stats - Displays your personal stats for each game.\n3) /leaderboard {wordle|nerdle|worldle|quordle} - Displays the top averages for the chosen game');
-} else if (commandName === 'stats') {
-    await getStats(interaction.user.tag.split('#')[0], interaction);
-} else if (commandName === 'leaderboard') {
-    await getLeaderboard(interaction.options.getString("gametype"), interaction);
-}
-
 });
 
-function getStats(user, interaction){
+bot.on('interactionCreate', async interaction => {
+    logger.info('Processing message from ' + interaction.user.tag.split('#')[0]);
+    if (!interaction.isCommand()) return;
+
+    const { commandName } = interaction;
+
+    if (commandName === 'help') {
+        await interaction.reply('Available Commands:\n1) /help - View this menu\n2) /stats - Displays your personal stats for each game.\n3) /leaderboard {wordle|nerdle|worldle|quordle} - Displays the top averages for the chosen game\n4) /catfact - Provide a random cat fact\n5) /faq - Provides answers to common FAQ\'s');
+    } else if (commandName === 'stats') {
+        user = interaction.options.getString("user") == null ? interaction.user.tag.split('#')[0] : interaction.options.getString("user");
+        await getStats(user, interaction);
+    } else if (commandName === 'leaderboard') {
+        await getLeaderboard(interaction.options.getString("gametype"), interaction);
+    } else if (commandName === 'catfact') {
+        await getCatFact(interaction);
+    } else if (commandName === 'faq') {
+        await interaction.reply('Q: Why does a WordleBot have an option to get a random cat fact?\nA: Fuck you.');
+    }
+
+});
+async function getCatFact(interaction){
+    axios.get('https://catfact.ninja/fact')
+    .then(res => {
+        interaction.reply(res.data.fact);
+    })
+    .catch(error => {
+        logger.info(error);
+    })
+}
+async function getStats(user, interaction){
     var outString = "";
     getGameAvg(['wordle','worldle','quordle','nerdle'], outString, user, interaction)
 }
@@ -101,7 +115,7 @@ function getGameAvg(type, outString, user, interaction){
         avg = Math.round(avg * 100) / 100
 
         if(!isNaN(avg) && tot != 0){
-            outString += 'Your average ' + type[0] + ' score is: ' + avg + ', with ' + tot + ' recorded games.\n';
+            outString += user + '\'s average ' + type[0] + ' score is: ' + avg + ', with ' + tot + ' recorded games.\n';
         }
         type.shift();
         getGameAvg(type, outString, user, interaction)
