@@ -24,17 +24,19 @@ bot.on("messageCreate", (message) => {
     var user = message.author.username; 
     logger.info('Message from ' + user);
     msgWords = message.content.split("\n")[0].split(" ");
-    if (msgWords[0] == 'Wordle' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
+    if(msgWords.length < 3){
+        return false;
+    }
+    else if (msgWords[0] == 'Wordle' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
         logger.info('Wordle score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
         var gameNum = parseInt(msgWords[1]);
         addWordleGame(user, rounds, gameNum, 'wordleScores');
     }
-    else if (msgWords[0] == 'Daily' && msgWords[1] == 'Quordle' && !isNaN(parseInt(msgWords[2]))) {
+    else if (msgWords[0] == 'Daily' && msgWords[1] == 'Quordle') {
         logger.info('Quordle score');
         var rounds = Math.max(...[message.content.split("\n")[1].substring(0,1),message.content.split("\n")[1].substring(3,4), message.content.split("\n")[2].substring(0,1),message.content.split("\n")[2].substring(3,4)]);
         var gameNum = parseInt(msgWords[2].split('#')[1]);
-        logger.info(rounds);
         if(isNaN(rounds)){
             return false;
         }
