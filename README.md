@@ -7,5 +7,7 @@
 
 ## Available Commands
 - `/help` provides a list of available commands
-- `/stats` provides your own stats for each of the 4 games
+- `/stats [user]` provides stats for each of the 4 games for the selected user, or yourself if blank
 - `/leaderboard [wordle|quordle|worldle|nerdle]` provide a leaderboard for the specified game
+- `/catfact` provides a random cat fact
+- `/faq` provides answers to common questions

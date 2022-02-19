@@ -91,7 +91,11 @@ async function getStats(user, interaction){
 }
 function getGameAvg(type, outString, user, interaction){
     if(type.length == 0){
-        interaction.reply(outString);
+        if(outString == ""){
+            interaction.reply(user + ' doesn\'t have any scores, you dimwit');
+        } else{
+            interaction.reply(outString);
+        }
         return;
     }
     var games = [];
