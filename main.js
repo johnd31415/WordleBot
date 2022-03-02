@@ -50,10 +50,10 @@ bot.on("messageCreate", (message) => {
         var gameNum = parseInt(msgWords[1]);
         addWordleGame(user, rounds, gameNum, 'nerdleScores', message);
     }
-    else if (msgWords[0] == '#Worldle' && !isNaN(parseInt(msgWords[1])) && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
+    else if (msgWords[0] == '#Worldle' && !isNaN(parseInt(msgWords[2].split('/')[0]))) {
         logger.info('worldle score');
         var rounds = parseInt(msgWords[2].split('/')[0]);
-        var gameNum = parseInt(msgWords[1]);
+        var gameNum = parseInt(msgWords[1].split('#')[1]);
         addWordleGame(user, rounds, gameNum, 'worldleScores', message);
     }
 });
@@ -144,11 +144,11 @@ function addWordleGame(user, rounds, gameNum, type, message){
             });
             if(flag){
                 fs.appendFile('gameData/'+ type +'.csv', user+','+gameNum+','+rounds+'\n', function (err) {
-                    if(rounds<2){
-                        message.reply("You cheated and you know it")
-                    } else if(rounds<3){
+                    if(rounds < 2){
+                        message.reply("Stfu, you cheated and you know it")
+                    } else if(rounds < 3){
                         message.reply("Aight that was definitely just luck")
-                    } else if(rounds<4 || (type == 'quordle' && rounds < 8)){
+                    } else if(rounds < 4 || (type == 'quordleScores' && rounds < 8)){
                         message.reply("Dayuum")
                     }
                     logger.info('Saved!');
